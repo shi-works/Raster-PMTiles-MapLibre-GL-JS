@@ -1,0 +1,157 @@
+<html>
+
+<head>
+    <title>PMTiles on MapLibre GL JS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/pmtiles@2.7.0/dist/index.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .map-overlay {
+            font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            position: absolute;
+            width: 200px;
+            bottom: 20px;
+            left: 0px;
+            padding: 10px;
+        }
+
+        .map-overlay .map-overlay-inner {
+            background-color: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-overlay label {
+            display: block;
+            margin: 0 0 0px;
+            font-size: 12px;
+            top: 100px;
+            left: 10px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .map-overlay input {
+            background-color: transparent;
+            display: inline-block;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            cursor: ew-resize;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="map-overlay top">
+        <div class="map-overlay-inner">
+            <label>オルソ画像 不透明度: <span id="ortho-slider-opacity-value">0%</span></label>
+            <input id="ortho-slider-opacity" type="range" min="0" max="100" step="1" value="100">
+        </div>
+    </div>
+    <script>
+        let protocol = new pmtiles.Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        // PLATEAUベクトルタイル
+        let PMTiles_URL = "https://xs489works.xsrv.jp/pmtiles-data/VIRTUAL_SHIZUOKA/lp_orthophoto/lp_orthophoto_add_srs.pmtiles";
+
+        const p = new pmtiles.PMTiles(PMTiles_URL)
+        p.getMetadata().then((res) => console.log(res));
+
+        protocol.add(p);
+
+        // マップを初期化します
+        var map = new maplibregl.Map({
+            container: 'map', // HTML内のマップが表示される要素のIDを指定します
+            style: 'https://tile2.openstreetmap.jp/styles/osm-bright/style.json',
+            center: [139.0735, 35.09895],
+            zoom: 14,
+            pitch: 0,
+            bearing: 0,
+            hash: true,
+            attributionControl: false
+        });
+
+        // ズーム・回転
+        map.addControl(new maplibregl.NavigationControl());
+
+        // フルスクリーンモードのオンオフ
+        map.addControl(new maplibregl.FullscreenControl());
+
+        // 現在位置表示
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: false
+            },
+            fitBoundsOptions: { maxZoom: 18 },
+            trackUserLocation: true,
+            showUserLocation: true
+        }));
+
+        // スケール表示
+        map.addControl(new maplibregl.ScaleControl({
+            maxWidth: 200,
+            unit: 'metric'
+        }));
+
+        // Attributionを折りたたみ表示
+        map.addControl(new maplibregl.AttributionControl({
+            compact: true,
+            customAttribution: '<a href="https://twitter.com/syanseto" target="_blank">Twitter</a> | <a href="https://github.com/shi-works/Raster-PMTiles-MapLibre-GL-JS" target="_blank">Github</a>'
+        }));
+
+        map.on('load', () => {
+            map.addSource("pmtiles-lp-orthophoto", {
+                type: "raster",
+                url: "pmtiles://" + PMTiles_URL,
+                attribution: '<a href="https://www.geospatial.jp/ckan/dataset/shizuoka-2019-pointcloud">VIRTUAL SHIZUOKA 静岡県 富士山南東部・伊豆東部 点群データ（LPデータ オルソ画像データ）を加工して作成</a>',
+                generateId: true
+            });
+
+            map.addLayer({
+                'id': 'pmtiles-lp-orthophoto',
+                'type': "raster",
+                'source': 'pmtiles-lp-orthophoto',
+                // 'source-layer': 'lp_orthophoto_add_srs.tif',
+                "minzoom": 1,
+                "maxzoom": 23,
+            });
+
+            const orthosliderOpactiy = document.getElementById('ortho-slider-opacity');
+            const orthosliderOpactiyValue = document.getElementById('ortho-slider-opacity-value');
+
+            orthosliderOpactiy.addEventListener('input', (e) => {
+                map.setPaintProperty(
+                    'pmtiles-lp-orthophoto',
+                    'raster-opacity',
+                    parseInt(e.target.value, 10) / 100
+                );
+                orthosliderOpactiyValue.textContent = e.target.value + '%';
+            });
+
+        })
+
+        map.showTileBoundaries = true;
+
+    </script>
+</body>
+
+</html>
