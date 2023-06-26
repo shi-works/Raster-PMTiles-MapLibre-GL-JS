@@ -70,7 +70,7 @@
         let protocol = new pmtiles.Protocol();
         maplibregl.addProtocol("pmtiles", protocol.tile);
 
-        // PLATEAUベクトルタイル
+        // オルソ画像ラスタタイル
         let PMTiles_URL = "https://xs489works.xsrv.jp/pmtiles-data/VIRTUAL_SHIZUOKA/lp_orthophoto/lp_orthophoto_add_srs.pmtiles";
 
         const p = new pmtiles.PMTiles(PMTiles_URL)
@@ -130,7 +130,6 @@
                 'id': 'pmtiles-lp-orthophoto',
                 'type': "raster",
                 'source': 'pmtiles-lp-orthophoto',
-                // 'source-layer': 'lp_orthophoto_add_srs.tif',
                 "minzoom": 1,
                 "maxzoom": 23,
             });
